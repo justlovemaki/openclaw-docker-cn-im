@@ -421,6 +421,11 @@ def sync():
         entries = ensure_path(plugins, ['entries'])
         installs = ensure_path(plugins, ['installs'])
 
+        # 通用渠道默认配置 (从环境变量获取)
+        def_dm_policy = env.get('DM_POLICY') or 'open'
+        def_allow_from = [x.strip() for x in env['ALLOW_FROM'].split(',') if x.strip()] if env.get('ALLOW_FROM') else ['*']
+        def_group_policy = env.get('GROUP_POLICY') or 'open'
+
         if env.get('OPENCLAW_PLUGINS_ENABLED'):
             plugins['enabled'] = env['OPENCLAW_PLUGINS_ENABLED'].lower() == 'true'
 
@@ -429,7 +434,18 @@ def sync():
         feishu_official_plugin_explicit = feishu_official_plugin_env in ('0', '1', 'false', 'true', 'no', 'yes', 'off', 'on')
         
         def sync_feishu(c, e):
-            c.update({'enabled': True, 'dmPolicy': 'open', 'allowFrom': ['*'], 'groupPolicy': 'open'})
+            c.update({
+                'enabled': True,
+                'dmPolicy': e.get('FEISHU_DM_POLICY') or def_dm_policy,
+                'allowFrom': [x.strip() for x in e['FEISHU_ALLOW_FROM'].split(',') if x.strip()] if e.get('FEISHU_ALLOW_FROM') else def_allow_from,
+                'groupPolicy': e.get('FEISHU_GROUP_POLICY') or def_group_policy,
+                'streaming': e.get('FEISHU_STREAMING', 'true').lower() == 'true',
+                'footer': {
+                    'elapsed': e.get('FEISHU_FOOTER_ELAPSED', 'true').lower() == 'true',
+                    'status': e.get('FEISHU_FOOTER_STATUS', 'true').lower() == 'true'
+                },
+                'requireMention': e.get('FEISHU_REQUIRE_MENTION', 'true').lower() == 'true'
+            })
             default_account = ensure_path(c, ['accounts', 'default'])
             default_account.update({
                 'appId': e['FEISHU_APP_ID'],
@@ -443,14 +459,21 @@ def sync():
                 'enabled': True, 'clientId': e['DINGTALK_CLIENT_ID'],
                 'clientSecret': e['DINGTALK_CLIENT_SECRET'],
                 'robotCode': e.get('DINGTALK_ROBOT_CODE') or e['DINGTALK_CLIENT_ID'],
-                'dmPolicy': 'open', 'groupPolicy': 'open', 'messageType': 'markdown',
-                'allowFrom': ['*']
+                'dmPolicy': e.get('DINGTALK_DM_POLICY') or def_dm_policy,
+                'groupPolicy': e.get('DINGTALK_GROUP_POLICY') or def_group_policy,
+                'messageType': 'markdown',
+                'allowFrom': [x.strip() for x in e['DINGTALK_ALLOW_FROM'].split(',') if x.strip()] if e.get('DINGTALK_ALLOW_FROM') else def_allow_from
             })
             if e.get('DINGTALK_CORP_ID'): c['corpId'] = e['DINGTALK_CORP_ID']
             if e.get('DINGTALK_AGENT_ID'): c['agentId'] = e['DINGTALK_AGENT_ID']
 
         def sync_wecom(c, e):
-            c.update({'enabled': True, 'dmPolicy': 'open', 'allowFrom': ['*'], 'groupPolicy': 'open' })
+            c.update({
+                'enabled': True,
+                'dmPolicy': e.get('WECOM_DM_POLICY') or def_dm_policy,
+                'allowFrom': [x.strip() for x in e['WECOM_ALLOW_FROM'].split(',') if x.strip()] if e.get('WECOM_ALLOW_FROM') else def_allow_from,
+                'groupPolicy': e.get('WECOM_GROUP_POLICY') or def_group_policy
+            })
             default_cfg = c.get('default')
             if not isinstance(default_cfg, dict):
                 default_cfg = {}
@@ -465,14 +488,27 @@ def sync():
         # 同步规则矩阵
         sync_rules = [
             (['TELEGRAM_BOT_TOKEN'], 'telegram', 
-             lambda c, e: c.update({'botToken': e['TELEGRAM_BOT_TOKEN'], 'dmPolicy': 'open', 'allowFrom': ['*'], 'groupPolicy': 'open', 'streamMode': 'partial'}),
+             lambda c, e: c.update({
+                 'botToken': e['TELEGRAM_BOT_TOKEN'],
+                 'dmPolicy': e.get('TELEGRAM_DM_POLICY') or def_dm_policy,
+                 'allowFrom': [x.strip() for x in e['TELEGRAM_ALLOW_FROM'].split(',') if x.strip()] if e.get('TELEGRAM_ALLOW_FROM') else def_allow_from,
+                 'groupPolicy': e.get('TELEGRAM_GROUP_POLICY') or def_group_policy,
+                 'streamMode': 'partial'
+             }),
              None),
             (['FEISHU_APP_ID', 'FEISHU_APP_SECRET'], 'feishu', sync_feishu,
              {'source': 'npm', 'spec': '@openclaw/feishu', 'installPath': '/home/node/.openclaw/extensions/feishu'}),
             (['DINGTALK_CLIENT_ID', 'DINGTALK_CLIENT_SECRET'], 'dingtalk', sync_dingtalk,
              {'source': 'npm', 'spec': 'https://github.com/soimy/clawdbot-channel-dingtalk.git', 'installPath': '/home/node/.openclaw/extensions/dingtalk'}),
             (['QQBOT_APP_ID', 'QQBOT_CLIENT_SECRET'], 'qqbot',
-             lambda c, e: c.update({'enabled': True, 'appId': e['QQBOT_APP_ID'], 'clientSecret': e['QQBOT_CLIENT_SECRET'], 'dmPolicy': 'open', 'allowFrom': ['*'], 'groupPolicy': 'open'}),
+             lambda c, e: c.update({
+                 'enabled': True,
+                 'appId': e['QQBOT_APP_ID'],
+                 'clientSecret': e['QQBOT_CLIENT_SECRET'],
+                 'dmPolicy': e.get('QQBOT_DM_POLICY') or def_dm_policy,
+                 'allowFrom': [x.strip() for x in e['QQBOT_ALLOW_FROM'].split(',') if x.strip()] if e.get('QQBOT_ALLOW_FROM') else def_allow_from,
+                 'groupPolicy': e.get('QQBOT_GROUP_POLICY') or def_group_policy
+             }),
              {'source': 'path', 'sourcePath': '/home/node/.openclaw/qqbot', 'installPath': '/home/node/.openclaw/extensions/qqbot'}),
             (['NAPCAT_REVERSE_WS_PORT'], 'napcat',
                lambda c, e: c.update({
@@ -484,6 +520,9 @@ def sync():
   e.get('NAPCAT_ADMINS') else {}),
                    'requireMention': True,
                    'rateLimitMs': 1000,
+                   'dmPolicy': e.get('NAPCAT_DM_POLICY') or def_dm_policy,
+                   'allowFrom': [x.strip() for x in e['NAPCAT_ALLOW_FROM'].split(',') if x.strip()] if e.get('NAPCAT_ALLOW_FROM') else def_allow_from,
+                   'groupPolicy': e.get('NAPCAT_GROUP_POLICY') or def_group_policy,
                }),
                {'source': 'path', 'sourcePath': '/home/node/.openclaw/extensions/napcat', 'installPath':
   '/home/node/.openclaw/extensions/napcat'}),

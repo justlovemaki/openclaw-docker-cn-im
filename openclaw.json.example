@@ -139,6 +139,12 @@
       "dmPolicy": "open",
       "allowFrom": ["*"],
       "groupPolicy": "open",
+      "streaming": true,
+      "footer": {
+        "elapsed": true,
+        "status": true
+      },
+      "requireMention": true,
       "accounts": {
         "default": {
           "appId": "your-app-id",
