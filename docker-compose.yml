@@ -63,6 +63,8 @@ x-openclaw-common-env: &openclaw-common-env
   # 插件控制
   OPENCLAW_PLUGINS_ENABLED: ${OPENCLAW_PLUGINS_ENABLED}
   FEISHU_OFFICIAL_PLUGIN_ENABLED: ${FEISHU_OFFICIAL_PLUGIN_ENABLED}
+  # Root 模式：设为 true 则以 root 用户运行 OpenClaw（默认 false 保持安全降权）
+  OPENCLAW_RUN_AS_ROOT: ${OPENCLAW_RUN_AS_ROOT:-false}
 
 services:
   openclaw-gateway:
