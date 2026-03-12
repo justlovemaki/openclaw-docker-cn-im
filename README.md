@@ -230,6 +230,37 @@ CONTEXT_WINDOW=200000
 MAX_TOKENS=8192
 ```
 
+**MiniMax（OpenAI 兼容协议）**
+
+[MiniMax](https://platform.minimax.io) 提供 OpenAI 兼容接口，支持 `MiniMax-M2.5` 和 `MiniMax-M2.5-highspeed` 两款模型，均支持 204,800 tokens 上下文窗口。
+
+作为默认提供商：
+
+```bash
+MODEL_ID=MiniMax-M2.5,MiniMax-M2.5-highspeed
+BASE_URL=https://api.minimax.io/v1
+API_KEY=your-minimax-api-key
+API_PROTOCOL=openai-completions
+CONTEXT_WINDOW=204800
+MAX_TOKENS=8192
+```
+
+作为第二提供商（同时保留默认提供商）：
+
+```bash
+MODEL2_NAME=minimax
+MODEL2_MODEL_ID=MiniMax-M2.5,MiniMax-M2.5-highspeed
+MODEL2_BASE_URL=https://api.minimax.io/v1
+MODEL2_API_KEY=your-minimax-api-key
+MODEL2_PROTOCOL=openai-completions
+MODEL2_CONTEXT_WINDOW=204800
+MODEL2_MAX_TOKENS=8192
+```
+
+> 💡 MiniMax 也支持 Anthropic 协议，将 `BASE_URL` 设为 `https://api.minimax.io/anthropic`、`API_PROTOCOL` 设为 `anthropic-messages` 即可。国内用户可将域名替换为 `api.minimaxi.com`（注意多一个 `i`）。API Key 可在 [MiniMax 开放平台](https://platform.minimax.io) 获取。
+>
+> 📖 API 文档：[OpenAI 兼容接口](https://platform.minimax.io/docs/api-reference/text-openai-api) | [Anthropic 兼容接口](https://platform.minimax.io/docs/api-reference/text-anthropic-api)
+
 #### 指定其它 Provider 作为默认主模型
 
 默认情况下，项目会把 [`MODEL_ID`](.env.example) 的第一个值同步为 [`agents.defaults.model.primary`](openclaw.json.example:88)，并自动补全为 `default/...`。
